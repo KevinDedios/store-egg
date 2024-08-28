@@ -1,8 +1,6 @@
 function printDetails(id) {
   // Buscar el producto con el ID especificado
   const product = products.find((each) => each.id === parseInt(id, 10));
-  /*En resumen, se usa 10 para asegurarse de que la conversión se haga en base decimal,
-  que es la base estándar para los números en la mayoría de los contextos.*/
 
   if (!product) {
     console.error("Producto no encontrado");
@@ -13,19 +11,29 @@ function printDetails(id) {
   const detailsTemplate = `
     <section class="product-images-block">
       <div class="product-images">
-        ${product.images.map((image) => `
+        ${product.images
+          .map(
+            (image) => `
           <img
             class="mini-img"
-            src="${image}"  // Mostrar imágenes correctamente
+            src="${image}"
             alt="${product.title}"
             onclick="changeMini(event)"
           />
-        `).join('')}
+          <img
+            class="mini-img"
+            src="${product.imageSrc}"
+            alt="${product.title}"
+            onclick="changeMini(event)"
+          />
+        `
+          )
+          .join("")}
       </div>
       <img
         class="big-img"
         id="big-img"
-        src="${product.images[0]}"  // Mostrar la primera imagen como principal
+        src="${product.imageSrc}"
         alt="${product.title}"
       />
     </section>
@@ -35,20 +43,10 @@ function printDetails(id) {
         <fieldset class="product-fieldset">
           <label class="product-label" for="color">Color</label>
           <select class="product-select" id="color">
-            ${product.colors.map(
-              (color) => `<option value="${color}">${color}</option>`
-            ).join("")}
+            ${product.colors
+              .map((color) => `<option value="${color}">${color}</option>`)
+              .join("")}
           </select>
-        </fieldset>
-        <fieldset class="product-fieldset">
-          <label class="product-label" for="quantity">Cantidad</label>
-          <input
-            type="number"
-            id="quantity"
-            min="1"
-            value="1"
-            onchange="changeSubtotal(event)"
-          />
         </fieldset>
       </form>
       <div class="product-description">
@@ -67,7 +65,7 @@ function printDetails(id) {
         <ul class="checkout-policy-list">
           <li>
             <span class="policy-icon">
-              <img src="./assets/truck.png" alt="Truck"/>
+              <img src="./assets/truck.png" alt="Camión"/>
             </span>
             <span class="policy-desc">
               Agrega el producto al carrito para conocer los costos de envío
@@ -75,7 +73,7 @@ function printDetails(id) {
           </li>
           <li>
             <span class="policy-icon">
-              <img src="./assets/plane.png" alt="Plane"/>
+              <img src="./assets/plane.png" alt="Avión"/>
             </span>
             <span class="policy-desc">
               Recibí aproximadamente entre 10 y 15 días hábiles, seleccionando envío normal
@@ -84,10 +82,8 @@ function printDetails(id) {
         </ul>
         <div class="checkout-process">
           <div class="top">
-            <input type="number" min="1" value="1" onchange="changeSubtotal(event)" />
-            <button type="button" class="cart-btn" onclick="saveProduct(${id})">
-              Añadir al Carrito
-            </button>
+            <input type="number" min="1" id="quantity-${id}" value="1" onchange="changeSubtotal(event)" />
+            <button type="button" class="cart-btn" onclick="saveProduct(${id})">Añadir al Carrito</button>
           </div>
         </div>
       </div>
@@ -130,11 +126,11 @@ function changeSubtotal(event) {
     console.error("Cantidad no válida");
     return;
   }
-  
+
   // Buscar el producto con el ID especificado
-  const id = new URLSearchParams(location.search).get('id');
+  const id = new URLSearchParams(location.search).get("id");
   const product = products.find((each) => each.id === parseInt(id, 10));
-  
+
   if (!product) {
     console.error("Producto no encontrado");
     return;
@@ -143,18 +139,18 @@ function changeSubtotal(event) {
   // Verificar que el precio del producto sea un número
   const price = parseFloat(product.price);
   console.log("Precio del producto:", price); // Depura el precio
-  
+
   if (isNaN(price)) {
     console.error("Precio no válido");
     return;
   }
-  
+
   // Calcular el subtotal
   const subtotal = quantity * price;
-  
+
   // Seleccionar la etiqueta donde se renderiza el subtotal
   const priceElement = document.querySelector("#price");
-  
+
   if (priceElement) {
     priceElement.textContent = `$${subtotal.toFixed(2)}`;
   } else {
@@ -162,44 +158,55 @@ function changeSubtotal(event) {
   }
 }
 
+
 function saveProduct(id) {
-  // Buscar el producto con el ID especificado
-  const found = products.find((each) => each.id === parseInt(id, 10));
+  // Buscar el producto con el ID proporcionado en el array de productos
+  const found = products.find((each) => each.id === id);
 
   if (!found) {
     console.error("Producto no encontrado");
     return;
   }
 
-  // Capturar los datos del producto seleccionados por el usuario
-  const product = {
+  // Crear un objeto con la información del producto que se va a guardar
+  const newProduct = {
     id: id,
     title: found.title,
     price: found.price,
-    image: found.images[0],  // Tomar la primera imagen
-    color: document.querySelector("#color").value,
-    quantity: parseInt(document.querySelector("#quantity").value, 10),
+    image: found.images[0], // Asumimos que la primera imagen es la principal
+    color: document.querySelector("#color").value, // Obtener el color seleccionado del formulario
+    quantity: document.querySelector("#quantity-" + id).value, // Obtener la cantidad seleccionada del formulario
+    description: found.description,
+    discount:found.discount,
   };
 
-  // Verificar si ya existe una clave "cart" en localStorage
-  let cart = localStorage.getItem("cart");
-  
-  if (cart) {
-    // Si existe, parsear el JSON para convertirlo a un array de productos
-    cart = JSON.parse(cart);
-  } else {
-    // Si no existe, inicializar un nuevo array para el carrito
+  // Obtener el carrito del localStorage, si existe
+let cart = localStorage.getItem('cart');
+
+if (cart) {
+  // Intenta parsear el carrito
+  cart = JSON.parse(cart);
+  // Verifica si el carrito es un array; si no, inicialízalo como un array vacío
+  if (!Array.isArray(cart)) {
     cart = [];
   }
-
-  // Agregar el nuevo producto al array del carrito
-  cart.push(product);
-
-  // Convertir el array de productos a JSON
-  const stringifyCart = JSON.stringify(cart);
-
-  // Guardar el array actualizado en localStorage
-  localStorage.setItem("cart", stringifyCart);
-
-  console.log(`Producto con ID ${id} guardado en el carrito.`);
+} else {
+  // Si no hay carrito en el localStorage, inicialízalo como un array vacío
+  cart = [];
 }
+
+
+  // Agregar el nuevo producto al carrito
+  cart.push(newProduct);
+
+  // Guardar el carrito actualizado en el localStorage
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+
+function clearAllLocalStorage() {
+  localStorage.clear();
+  console.log("Todo el localStorage ha sido eliminado.");
+}
+
+// clearAllLocalStorage();
