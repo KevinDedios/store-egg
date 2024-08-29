@@ -42,7 +42,7 @@ const options1 = [
   { title: "Compra", linkTo: "#compra", opts: ["Formas de pago", "Envíos", "Devoluciones"] },
   { title: "Costos y Tarifas", linkTo: "#costos-tarifas", opts: ["Impuestos", "Facturación"] },
   { title: "Mis pedidos", linkTo: "#mis-pedidos", opts: ["Pedir nuevamente", "Lista de deseos"] },
-  { title: "Garantía", linkTo: "#garantia", opts: ["Pide garantía causa"] },
+  { title: "Garantía", linkTo: "#garantia", opts: ["Pide garantía"] },
 ];
 
 for (const option of options1) {

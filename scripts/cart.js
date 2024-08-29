@@ -40,6 +40,10 @@ function createCartCard(product) {
                   <span class="Quantity-product">Cantidad: </span>
                   <input type="number" name="quantity" min="1" value="${product.quantity}" id="${product.id}" onchange="changeQuantity(event)">
               </div>
+              <!-- Agregando botón favoritos -->
+              <div class="product">
+              <button class="add-to-favorites">Agregar a Favoritos</button>
+              </div>
           </div>
       </div>
   `;
@@ -78,30 +82,74 @@ function calculateTotal() {
   }, 0);
 }
 
-// Función para actualizar la vista de productos en el carrito
+function addProductToFavorites(productId) {
+  let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  const cartProducts = loadCartProducts();
+
+  const product = cartProducts.find(p => p.id === productId);
+
+  if (product && !favorites.some(fav => fav.id === productId)) {
+      favorites.push({
+          id: product.id,
+          title: product.title,
+          imageSrc: product.imageSrc, // Aseguramos que la imagen se guarda
+          color: product.color,
+          description: product.description,
+          price: product.price
+      });
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      alert(`${product.title} ha sido agregado a tus favoritos.`);
+      
+      // Actualizar la lista de favoritos si estás en la página de favoritos
+      if (document.getElementById('favorites-list')) {
+          displayFavorites(); // Llama a displayFavorites si estás en la página de favoritos
+      }
+  } else {
+      alert(`${product ? product.title : "Este producto"} ya está en tus favoritos.`);
+  }
+}
+
+
+
+// Modifica la función updateCartView para agregar los event listeners
 function updateCartView() {
   const cartProducts = loadCartProducts();
   const cartProductsContainer = document.getElementById("cartproducts");
 
   if (cartProductsContainer) {
-      if (cartProducts.length > 0) {
-          const productCardsHTML = cartProducts.map(createCartCard).join("");
-          cartProductsContainer.innerHTML = productCardsHTML;
+    if (cartProducts.length > 0) {
+      const productCardsHTML = cartProducts.map(createCartCard).join("");
+      cartProductsContainer.innerHTML = productCardsHTML;
 
-          // Actualiza el total a pagar
-          const totalPrice = calculateTotal();
-          document.getElementById("total-price").textContent = totalPrice.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
-      } else {
-          cartProductsContainer.innerHTML = "<p>No hay productos en el carrito.</p>";
-          const totalPriceElement = document.getElementById("total-price");
-          if (totalPriceElement) {
-              totalPriceElement.textContent = (0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
-          }
+      // Añadir evento click a los botones "Agregar a Favoritos"
+      const favoriteButtons = document.querySelectorAll('.add-to-favorites');
+      favoriteButtons.forEach((button, index) => {
+        button.addEventListener('click', () => {
+          const productId = cartProducts[index].id;
+          addProductToFavorites(productId);
+        });
+      });
+
+      // Actualiza el total a pagar
+      const totalPrice = calculateTotal();
+      document.getElementById("total-price").textContent = totalPrice.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+    } else {
+      cartProductsContainer.innerHTML = "<p>No hay productos en el carrito.</p>";
+      const totalPriceElement = document.getElementById("total-price");
+      if (totalPriceElement) {
+        totalPriceElement.textContent = (0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
       }
+    }
   } else {
-      console.error('Elemento con id "cart-products-container" no encontrado.');
+    console.error('Elemento con id "cart-products-container" no encontrado.');
   }
 }
+
+// Llama a la función para actualizar la vista cuando la página se carga
+document.addEventListener("DOMContentLoaded", () => {
+  updateCartView();
+});
+
 
 
 // Llama a la función para actualizar la vista cuando la página se carga
